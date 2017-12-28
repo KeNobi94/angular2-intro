@@ -1,6 +1,10 @@
 import { Injectable } from "@angular/core";
 import { Http, Headers, ResponseOptions } from "@angular/http";
-import 'rxjs/add/operator/toPromise';
+import { Observable } from "rxjs/Observable";
+
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/observable/throw';
 
 import { Todo } from "./todo";
 
@@ -11,13 +15,11 @@ export class TodoService {
 
     constructor(private http: Http) { }
 
-    getTodos(): Promise<Todo[]> {
+    getTodos(): Observable<Todo[]> {
         return this.http
-            .get(this.apiUrl)
-            .toPromise()
-            .then(res => res.json().data)
-            .then(todos => this.todos = todos)
-            .catch(this.handleError);
+                .get(this.apiUrl)
+                .map(res => res.json().data as Todo[])
+                .catch(this.handleError);
     }
 
     createTodo(title: string) {
@@ -25,28 +27,20 @@ export class TodoService {
             options = new ResponseOptions({ headers }),
             todo = new Todo(title);
 
-        this.http.post(this.apiUrl, todo, options)
-            .toPromise()
-            .then(res => res.json().data)
-            .then(todo => this.todos.push(todo))
-            .catch(this.handleError);
+        return this.http
+                .post(this.apiUrl, todo, options)
+                .map(res => res.json().data)
+                .catch(this.handleError);
     }
 
-    deleteTodo(todo: Todo) {
+    removeTodo(todo: Todo) {
         let headers = new Headers({'Content-type': 'application/json'}),
             options = new ResponseOptions({ headers }),
             url = `${this.apiUrl}/${todo.id}`;
 
-        this.http.post(this.apiUrl, todo, options)
-            .toPromise()
-            .then(res => {
-                let index = this.todos.indexOf(todo);
-
-                if (index > -1) {
-                    this.todos.splice(index, 1);
-                }
-            })
-            .catch(this.handleError);
+        return this.http
+                    .post(this.apiUrl, todo, options)
+                    .catch(this.handleError);
 
     }
 
@@ -55,17 +49,14 @@ export class TodoService {
             options = new ResponseOptions({ headers }),
             url = `${this.apiUrl}/${todo.id}`;
 
-        this.http.post(this.apiUrl, todo, options)
-            .toPromise()
-            .then(res => {
-                todo.completed = !todo.completed;
-            })
-            .catch(this.handleError);
+        return this.http
+                    .post(this.apiUrl, todo, options)
+                    .catch(this.handleError);
     }
 
     private handleError(error: any) {
         console.log('Error!', error);
-        return Promise.reject(error.message || error);
+        return Observable.throw(error.message || error);
     }
 
 }
