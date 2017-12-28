@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Http } from "@angular/http";
+import { Http, Headers, ResponseOptions } from "@angular/http";
 import 'rxjs/add/operator/toPromise';
 
 import { Todo } from "./todo";
@@ -21,20 +21,46 @@ export class TodoService {
     }
 
     createTodo(title: string) {
-        let todo = new Todo(title);
-        this.todos.push(todo);
+        let headers = new Headers({'Content-type': 'application/json'}),
+            options = new ResponseOptions({ headers }),
+            todo = new Todo(title);
+
+        this.http.post(this.apiUrl, todo, options)
+            .toPromise()
+            .then(res => res.json().data)
+            .then(todo => this.todos.push(todo))
+            .catch(this.handleError);
     }
 
     deleteTodo(todo: Todo) {
-        let index = this.todos.indexOf(todo);
+        let headers = new Headers({'Content-type': 'application/json'}),
+            options = new ResponseOptions({ headers }),
+            url = `${this.apiUrl}/${todo.id}`;
 
-        if (index > -1) {
-            this.todos.splice(index, 1);
-        }
+        this.http.post(this.apiUrl, todo, options)
+            .toPromise()
+            .then(res => {
+                let index = this.todos.indexOf(todo);
+
+                if (index > -1) {
+                    this.todos.splice(index, 1);
+                }
+            })
+            .catch(this.handleError);
+
     }
 
     toggleTodo(todo: Todo) {
-        todo.completed = !todo.completed;
+        let headers = new Headers({'Content-type': 'application/json'}),
+            options = new ResponseOptions({ headers }),
+            url = `${this.apiUrl}/${todo.id}`;
+
+        this.http.post(this.apiUrl, todo, options)
+            .toPromise()
+            .then(res => {
+                todo.completed = !todo.completed;
+            })
+            .catch(this.handleError);
     }
 
     private handleError(error: any) {
